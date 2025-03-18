@@ -137,15 +137,11 @@ export async function signInWithOtpAction(formData: FormData) {
 export async function verifyOtpAction(formData: FormData) {
 	const email = formData.get("email") as string;
 	const token = formData.get("token") as string;
+	const redirectTo = (formData.get("redirectTo") as string) || "/dashboard";
 
 	const supabase = getSupabaseServerClient();
 
 	try {
-		// Make sure we're accessing the auth object correctly
-		if (!supabase || !supabase.auth) {
-			throw new Error("Supabase client not initialized properly");
-		}
-
 		const { data, error } = await supabase.auth.verifyOtp({
 			email,
 			token,
@@ -156,9 +152,13 @@ export async function verifyOtpAction(formData: FormData) {
 			return { success: false, error: error.message };
 		}
 
-		return { success: true, user: data.user };
+		// Return the redirect URL along with the success response
+		return {
+			success: true,
+			user: data.user,
+			redirectUrl: redirectTo,
+		};
 	} catch (error: any) {
-		console.error("OTP verification error:", error);
 		return {
 			success: false,
 			error:
