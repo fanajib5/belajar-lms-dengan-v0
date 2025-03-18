@@ -109,6 +109,7 @@ export async function signInWithPasswordAction(formData: FormData) {
 // Server action untuk sign in dengan OTP
 export async function signInWithOtpAction(formData: FormData) {
 	const email = formData.get("email") as string;
+	const redirectTo = (formData.get("redirectTo") as string) || "";
 
 	const supabase = getSupabaseServerClient();
 
@@ -116,7 +117,9 @@ export async function signInWithOtpAction(formData: FormData) {
 		const { error } = await supabase.auth.signInWithOtp({
 			email,
 			options: {
-				emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+				emailRedirectTo: `${
+					process.env.NEXT_PUBLIC_SITE_URL
+				}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
 			},
 		});
 
@@ -124,7 +127,11 @@ export async function signInWithOtpAction(formData: FormData) {
 			return { success: false, error: error.message };
 		}
 
-		return { success: true, message: "Kode OTP telah dikirim ke email Anda." };
+		return {
+			success: true,
+			message: "Kode OTP telah dikirim ke email Anda.",
+			redirectTo,
+		};
 	} catch (error: any) {
 		return {
 			success: false,
@@ -137,7 +144,7 @@ export async function signInWithOtpAction(formData: FormData) {
 export async function verifyOtpAction(formData: FormData) {
 	const email = formData.get("email") as string;
 	const token = formData.get("token") as string;
-	const redirectTo = (formData.get("redirectTo") as string) || "/dashboard";
+	const redirectTo = formData.get("redirectTo") as string;
 
 	const supabase = getSupabaseServerClient();
 
@@ -152,12 +159,13 @@ export async function verifyOtpAction(formData: FormData) {
 			return { success: false, error: error.message };
 		}
 
-		// Return the redirect URL along with the success response
-		return {
-			success: true,
-			user: data.user,
-			redirectUrl: redirectTo,
-		};
+		// If we have a redirectTo value, use it for redirection
+		if (redirectTo) {
+			// For server-side redirect, we return the path
+			return { success: true, user: data.user, redirectTo };
+		}
+
+		return { success: true, user: data.user };
 	} catch (error: any) {
 		return {
 			success: false,
