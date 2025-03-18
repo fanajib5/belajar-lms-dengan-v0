@@ -144,7 +144,6 @@ export async function signInWithOtpAction(formData: FormData) {
 export async function verifyOtpAction(formData: FormData) {
 	const email = formData.get("email") as string;
 	const token = formData.get("token") as string;
-	const redirectTo = formData.get("redirectTo") as string;
 
 	const supabase = getSupabaseServerClient();
 
@@ -157,12 +156,6 @@ export async function verifyOtpAction(formData: FormData) {
 
 		if (error) {
 			return { success: false, error: error.message };
-		}
-
-		// If we have a redirectTo value, use it for redirection
-		if (redirectTo) {
-			// For server-side redirect, we return the path
-			return { success: true, user: data.user, redirectTo };
 		}
 
 		return { success: true, user: data.user };
